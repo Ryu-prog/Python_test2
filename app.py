@@ -20,7 +20,7 @@ elif img_source == "カメラで撮影":
 
 if img_file is not None:
     with st.spinner("推定中..."):
-        img = Image.open(img_file)
+        img = Image.open(io.BytesIO(img_file.getvalue())).convert("RGB")
         st.image(img, caption="対象の画像", width=480)
         st.write("")
 
