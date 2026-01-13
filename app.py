@@ -25,16 +25,18 @@ img = img.convert("RGB")
 if img_file is not None:
     with st.spinner("推定中..."):
 
-        # 画像の読み込み（アップロードとカメラで処理が違う）
+        # 画像が None の場合は即停止（重要）
+        if img_file is None:
+            st.stop()
+
+        # 画像の読み込み
         if img_source == "カメラで撮影":
-            # camera_input は getvalue() を使うと壊れる
             img = Image.open(img_file)
         else:
-            # file_uploader は BytesIO が必要
-            img = Image.open(io.BytesIO(img_file.read()))
+            img = Image.open(io.BytesIO(img_file.getvalue()))
 
-        # ここで確実に RGB に変換
         img = img.convert("RGB")
+
 
 
         st.image(img, caption="対象の画像", width=480)
