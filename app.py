@@ -14,10 +14,13 @@ st.sidebar.write("")
 
 img_source = st.sidebar.radio("画像のソースを選択してください。",
                               ("画像をアップロード", "カメラで撮影"))
-if img_source == "画像をアップロード":
-    img_file = st.sidebar.file_uploader("画像を選択してください。", type=["png", "jpg"])
-elif img_source == "カメラで撮影":
-    img_file = st.camera_input("カメラで撮影")
+if img_source == "カメラで撮影":
+    img = Image.open(img_file)
+else:
+    img = Image.open(io.BytesIO(img_file.getvalue()))
+
+img = img.convert("RGB")
+
 
 if img_file is not None:
     with st.spinner("推定中..."):
