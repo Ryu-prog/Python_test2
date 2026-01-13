@@ -1,64 +1,54 @@
-# 以下を「app.py」に書き込み
 import streamlit as st
 import matplotlib.pyplot as plt
 from PIL import Image
 from model import predict
 import io
 
-# st.set_option("deprecation.showfileUploaderEncoding", False)
-
 st.sidebar.title("画像認識アプリ")
 st.sidebar.write("オリジナルの画像認識モデルを使って何の画像かを判定します。")
 
-st.sidebar.write("")
-
 img_source = st.sidebar.radio("画像のソースを選択してください。",
                               ("画像をアップロード", "カメラで撮影"))
-if img_source == "カメラで撮影":
-    img = Image.open(img_file)
+
+# まず img_file を取得する（ここが最重要）
+if img_source == "画像をアップロード":
+    img_file = st.sidebar.file_uploader("画像を選択してください。", type=["png", "jpg", "jpeg"])
 else:
-    img = Image.open(io.BytesIO(img_file.getvalue()))
+    img_file = st.camera_input("カメラで撮影")
 
-img = img.convert("RGB")
+# img_file が None のときは何もしない
+if img_file is None:
+    st.stop()
 
+with st.spinner("推定中..."):
 
-if img_file is not None:
-    with st.spinner("推定中..."):
+    # 画像の読み込み
+    if img_source == "カメラで撮影":
+        img = Image.open(img_file)
+    else:
+        img = Image.open(io.BytesIO(img_file.getvalue()))
 
-        # 画像が None の場合は即停止（重要）
-        if img_file is None:
-            st.stop()
+    img = img.convert("RGB")
 
-        # 画像の読み込み
-        if img_source == "カメラで撮影":
-            img = Image.open(img_file)
-        else:
-            img = Image.open(io.BytesIO(img_file.getvalue()))
+    st.image(img, caption="対象の画像", width=480)
 
-        img = img.convert("RGB")
+    # 予測
+    results = predict(img)
 
+    # 結果の表示
+    st.subheader("判定結果")
+    n_top = 3
+    for result in results[:n_top]:
+        st.write(f"{round(result[2]*100, 2)}% の確率で {result[0]} です。")
 
+    # 円グラフ
+    pie_labels = [result[1] for result in results[:n_top]] + ["others"]
+    pie_probs = [result[2] for result in results[:n_top]] + \
+                [sum([result[2] for result in results[n_top:]])]
 
-        st.image(img, caption="対象の画像", width=480)
-        st.write("")
-
-        # 予測
-        results = predict(img)
-
-        # 結果の表示
-        st.subheader("判定結果")
-        n_top = 3  # 確率が高い順に3位まで返す
-        for result in results[:n_top]:
-            st.write(str(round(result[2]*100, 2)) + "%の確率で" + result[0] + "です。")
-
-        # 円グラフの表示
-        pie_labels = [result[1] for result in results[:n_top]]
-        pie_labels.append("others")
-        pie_probs = [result[2] for result in results[:n_top]]
-        pie_probs.append(sum([result[2] for result in results[n_top:]]))
-        fig, ax = plt.subplots()
-        wedgeprops={"width":0.3, "edgecolor":"white"}
-        textprops = {"fontsize":6}
-        ax.pie(pie_probs, labels=pie_labels, counterclock=False, startangle=90,
-               textprops=textprops, autopct="%.2f", wedgeprops=wedgeprops)  # 円グラフ
-        st.pyplot(fig)
+    fig, ax = plt.subplots()
+    wedgeprops = {"width": 0.3, "edgecolor": "white"}
+    textprops = {"fontsize": 6}
+    ax.pie(pie_probs, labels=pie_labels, counterclock=False, startangle=90,
+           textprops=textprops, autopct="%.2f", wedgeprops=wedgeprops)
+    st.pyplot(fig)
