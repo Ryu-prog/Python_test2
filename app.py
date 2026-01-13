@@ -21,7 +21,16 @@ elif img_source == "カメラで撮影":
 
 if img_file is not None:
     with st.spinner("推定中..."):
-        img = Image.open(io.BytesIO(img_file.getvalue())).convert("RGB")
+
+        # 画像の読み込み（アップロードとカメラで処理が違う）
+        if img_source == "カメラで撮影":
+            img = Image.open(img_file)
+        else:
+            img = Image.open(io.BytesIO(img_file.getvalue()))
+
+        # ここで確実に RGB に変換
+        img = img.convert("RGB")
+
         st.image(img, caption="対象の画像", width=480)
         st.write("")
 
